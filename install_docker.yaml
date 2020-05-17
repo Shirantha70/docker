@@ -1,0 +1,39 @@
+---
+- hosts: docker-nodes
+  tasks:
+  # below is not working with ansible 2.9.7 and python 3
+  #  - name: Add repository
+  #    yum_repository:
+  #      name: docker-ce
+  #      description: docker-ce yum repo
+  #      baseurl: https://download.docker.com/linux/centos/docker-ce.repo
+  # the following is working with python3 
+  - name: Adding docker-ce repo
+    get_url:
+      url: https://download.docker.com/linux/centos/docker-ce.repo
+      validate_certs: yes
+      dest: /etc/yum.repos.d/docker-ce.repo
+    vars:
+       ansible_python_interpreter: /bin/python3
+  - name: install containered.io
+  # had to specify the package here. centos-stable repo had a minor version which was incompat with latest docker-ce
+    yum:
+      name: https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.10-3.2.el7.x86_64.rpm
+      state: present
+  - name: install docker-ce
+    yum:
+      name: "{{ packages }}"
+      state: latest
+    vars:
+      packages:
+        - docker-ce
+        - docker-ce-cli
+  # yum not working with python3
+
+  # enabling and starting docker service
+  - name: Make sure docker is running and enabled
+    systemd:
+      name: docker.service
+      enabled: yes
+      state: started
+...
